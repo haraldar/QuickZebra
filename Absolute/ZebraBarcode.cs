@@ -28,6 +28,9 @@ namespace QuickZebra.Absolute
             _mode = mode;
         }
 
+        public string? GetId()
+            => Id;
+
         string IZebraField.Zebrify()
             => EncapsuleLine(ZebraLexicon.BC + _bcOrientation?.ToString() + WithComma(_bcHeight)
                 + WithComma(_line) + WithComma(_lineAbove) + WithComma(_checkDigit) + WithComma(_mode)
