@@ -1,5 +1,5 @@
 # QuickZebra
-A C# class library (dll) for creating ZPL code from C# code. Written to work with at least labelary. There are 2 different approaches with the same result in this library.
+A C# class library for creating ZPL code from C# code. Written to work with at least labelary. There are different approaches with the same result in this library, which will be displayed in Program.cs.
 
 ---
 
