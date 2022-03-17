@@ -12,6 +12,9 @@ namespace QuickZebra.Absolute
         public ZebraComment(string comment)
             => _comment = comment;
 
+        public string? GetId()
+            => Id;
+
         string IZebraField.Zebrify()
             => ZebraLexicon.FX + " " + _comment;
     }
