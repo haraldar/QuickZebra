@@ -11,10 +11,18 @@ namespace QuickZebra.Absolute
         private char _font;
         private int? _fontW;
 
-        public ZebraFont(char font = 'A', int height = 30, int? width = null)
-            => (_font, Height, _fontW) = (font, height, width);
+        public ZebraFont(char font = 'A')
+        {
+            _font = font;
+            if (Height == 0) Height = 30;
+            if (Width == 0) _fontW = null;
+        }
+
+        public string? GetId()
+            => Id;
 
         string IZebraField.Zebrify()
-            => ZebraLexicon.CF + _font.ToString() + WithComma(Height) + WithComma(_fontW);
+            => ZebraLexicon.CF + _font.ToString() + WithComma(Height)
+                + WithComma(_fontW);
     }
 }
