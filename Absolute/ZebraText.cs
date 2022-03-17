@@ -15,20 +15,26 @@ namespace QuickZebra.Absolute
         public ZebraText(string dataString = "")
             => _dataString = dataString;
 
-        public List<IZebraField> ConvertMultilineText(List<string> dataStrings, int xIncrement = 0,
-            int yIncrement = 40)
+        public List<IZebraField> FromList(List<string> dataStrings, int x = 0,
+             int y = 0, int xIncrement = 0, int yIncrement = 40,
+             bool invertIfOverlap = false)
         {
-            var xPos = X;
-            var yPos = Y;
-            var textFields = new List<IZebraField>();
+            (var xPos, var yPos) = (x, y);
+            List<IZebraField> textFields = new();
             foreach (var dataString in dataStrings)
             {
-                textFields.Add(new ZebraText(dataString) { X = xPos, Y = yPos, Alignment = Alignment});
+                textFields.Add(new ZebraText(dataString) 
+                { 
+                    X = xPos, Y = yPos, invertOnOverlap = invertIfOverlap
+                });
                 xPos += xIncrement;
                 yPos += yIncrement;
             }
             return textFields;
         }
+
+        public string? GetId()
+            => Id;
 
         string IZebraField.Zebrify()
             => EncapsuleLine(ZebraLexicon.FD + _dataString);
