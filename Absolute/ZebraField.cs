@@ -8,7 +8,15 @@ namespace QuickZebra.Absolute
 {
     public class ZebraField
     {
-        // Starting coordinates
+        #region properties
+
+        private string? _id;
+        public string? Id
+        {
+            get => _id;
+            set => _id = value;
+        }
+
         private int _x;
         public int X
         {
@@ -23,7 +31,6 @@ namespace QuickZebra.Absolute
             set => _y = ConfineInt(value);
         }
 
-        // Size values
         private int _height;
         public int Height
         {
@@ -38,9 +45,6 @@ namespace QuickZebra.Absolute
             set => _width = ConfineInt(value);
         }
 
-        // Organization
-        public int orientation = 0;
-
         private int _alignment;
         public int Alignment
         {
@@ -48,12 +52,10 @@ namespace QuickZebra.Absolute
             set => _alignment = ConfineInt(value, upper:2);
         }
 
-        // Distance from other objects
-        public int margin = 0;
-        public int padding = 0;
-
-        // Misc
         public bool invertOnOverlap = false;
+
+        #endregion properties
+
 
         /// <summary>
         /// Restricts a given value to a given lower and a given upper limit
@@ -66,14 +68,29 @@ namespace QuickZebra.Absolute
         public int ConfineInt(int val, int lower = 0, int upper = 32000)
             => (val >= upper) ? upper : ((val <= lower) ? lower : val);
 
+        /// <summary>
+        /// Adds a comma to the given object's string representation.
+        /// </summary>
+        /// <param name="val">The value to add a comma to.</param>
+        /// <returns>The object with a prepended comma.</returns>
         public static string WithComma(object? val)
         {
             try { return "," + val?.ToString(); }
             catch { return "," + (val ?? ""); }
         }
+
+        /// <summary>
+        /// Collects the positional info into a ZPL command.
+        /// </summary>
+        /// <returns>The ZPL code setting the position.</returns>
         public string GetPosition()
             => ZebraLexicon.FO + X.ToString() + WithComma(Y) + WithComma(Alignment);
 
+        /// <summary>
+        /// Encapsule the inner field part in  between position, switches and end-of-field.
+        /// </summary>
+        /// <param name="fieldContent">The inner field.</param>
+        /// <returns>The full string line.</returns>
         public string EncapsuleLine(string fieldContent)
             => GetPosition() + ((invertOnOverlap) ? ZebraLexicon.FR : "") + fieldContent + ZebraLexicon.FS;
     }
@@ -88,5 +105,6 @@ namespace QuickZebra.Absolute
         /// </summary>
         /// <returns>The ZPL code string.</returns>
         public string Zebrify();
+        public string? GetId();
     }
 }
