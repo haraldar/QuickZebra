@@ -12,11 +12,8 @@ namespace QuickZebra.Absolute
         private char _color;
         private int _rounding;
 
-        public ZebraGraphicalBox(int width = 0, int height = 0, int thickness = 1,
-            char color = 'B', int rounding = 0)
+        public ZebraGraphicalBox(int thickness = 1, char color = 'B', int rounding = 0)
         {
-            Width = width;
-            Height = height;
             _thickness = thickness;
             _color = color;
             _rounding = rounding;
@@ -27,6 +24,9 @@ namespace QuickZebra.Absolute
         public string DrawGraphicalBox()
             => ZebraLexicon.GB + Width.ToString() + WithComma(Height) + WithComma(_thickness)
                 + WithComma(_color) + WithComma(_rounding);
+
+        public string? GetId()
+            => Id;
 
         string IZebraField.Zebrify()
             => EncapsuleLine(DrawGraphicalBox());
