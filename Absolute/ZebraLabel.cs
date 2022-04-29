@@ -50,29 +50,91 @@ namespace QuickZebra.Absolute
         public void AddFields(List<IZebraField> fieldList)
             => fieldList.ForEach(field => fields.Add(field));
 
-        public void AddText(string text, int x = 0, int y = 0,
+        //// DEPRECATED
+        //public void AddText(string text, int x = 0, int y = 0,
+        //    bool invertIfOverlap = false)
+        //    => fields.Add(new ZebraText(text) { X = x, Y = y,
+        //        invertOnOverlap=invertIfOverlap});
+
+        // NEW
+        public List<IZebraField> AddText(string text, (int x, int y) loc, bool invertIfOverlap = false)
+            => new(fields.Append(new ZebraText(text)
+            {
+                X = loc.x,
+                Y = loc.y,
+                invertOnOverlap=invertIfOverlap
+            }));
+
+        //// DEPRECATED
+        //public void AddMultipleText(List<string> dataStrings, int x = 0, int y = 0,
+        //    int xIncrement = 0, int yIncrement = 40, bool invertIfOverlap = false)
+        //    => fields.AddRange(new ZebraText().FromList(dataStrings, x, y,
+        //        xIncrement, yIncrement, invertIfOverlap));
+
+        // NEW
+        public List<IZebraField> AddMultipleText(List<string> dataStrings, (int? x, int? y) loc, (int? x, int? y) incr,
             bool invertIfOverlap = false)
-            => fields.Add(new ZebraText(text) { X = x, Y = y,
-                invertOnOverlap=invertIfOverlap});
+        {
+            fields.AddRange(new ZebraText()
+                .FromList(dataStrings, loc.x ?? 0, loc.y ?? 0, incr.x ?? 0, incr.y ?? 40, invertIfOverlap));
+            return fields;
+        }
 
-        public void AddMultipleText(List<string> dataStrings, int x = 0, int y = 0,
-            int xIncrement = 0, int yIncrement = 40, bool invertIfOverlap = false)
-            => fields.AddRange(new ZebraText().FromList(dataStrings, x, y,
-                xIncrement, yIncrement, invertIfOverlap));
+        //// DEPRECATED
+        //public void SetFont(char font = 'A', int height = 30, int width = 0)
+        //    => fields.Add(new ZebraFont(font)
+        //    {
+        //        Height = height,
+        //        Width = width
+        //    });
 
-        public void SetFont(char font = 'A', int height = 30, int width = 0)
-            => fields.Add(new ZebraFont(font) { Height = height, Width = width});
+        // NEW
+        public List<IZebraField> SetFont((int? height, int? width) dims, char font = 'A')
+            => new(fields.Append(new ZebraFont(font)
+            {
+                Height = dims.height ?? 30,
+                Width = dims.width ?? 0
+            }));
 
-        public void AddComment(string comment)
-            => fields.Add(new ZebraComment(comment));
+        // NEW
+        public List<IZebraField> SetFont(char font = 'A')
+            => new(fields.Append(new ZebraFont(font)
+            {
+                Height = 30,
+                Width = 0
+            }));
 
-        public void DrawBox(int x = 0, int y = 0, int height = 1, int width = 1,
-            int thickness = 1, char color = 'B', int rounding = 0,
-            bool invertIfOverlap = false)
-            => fields.Add(new ZebraGraphicalBox(thickness, color, rounding)
-            { X = x, Y = y, Height = height, Width = width,
-                invertOnOverlap = invertIfOverlap });
+        // NEW
+        public List<IZebraField> AddComment(string comment)
+            => new(fields.Append(new ZebraComment(comment)));
 
+        //// DEPRECATED
+        //public void DrawBox(int x = 0, int y = 0, int height = 1, int width = 1,
+        //    int thickness = 1, char color = 'B', int rounding = 0,
+        //    bool invertIfOverlap = false, int? xy = null)
+        //    => fields.Add(new ZebraGraphicalBox(thickness, color, rounding)
+        //    {
+        //        X = x,
+        //        Y = y,
+        //        Width = xy ?? width,
+        //        Height = xy ?? height,
+        //        invertOnOverlap = invertIfOverlap
+        //    });
+
+        // NEW
+        public void DrawBox((int x, int y) loc, (int width, int height, int thickness) dims,
+            char color = 'B', int rounding = 0, bool invertIfOverlap = false)
+            => fields.Add(new ZebraGraphicalBox(dims.thickness, color, rounding)
+            {
+                X = loc.x,
+                Y = loc.y,
+                Width = dims.width,
+                Height = dims.height,
+                invertOnOverlap = invertIfOverlap
+            });
+
+        // USELESS
+        // DEPRECATED
         public void SetPlaceHolder(string id)
             => fields.Add(new ZebraPlaceHolder(id));
 
@@ -82,8 +144,12 @@ namespace QuickZebra.Absolute
         public void DrawBarCode(string content, int x = 0, int y = 0, char? orientation = null,
             int? height = null, char? line = null, char? lineAbove = null,
             char? checkDigit = null, char? mode = null, bool invertIfOverlap = false)
-            => fields.Add(new ZebraBarcode(content, orientation, height, line, lineAbove,
-                checkDigit, mode) { X = x, Y = y, invertOnOverlap = invertIfOverlap});
+            => fields.Add(new ZebraBarcode(content, orientation, height, line, lineAbove, checkDigit, mode)
+            {
+                X = x,
+                Y = y,
+                invertOnOverlap = invertIfOverlap
+            });
 
         /// <summary>
         /// Replaces the placeholder with the matching id.
