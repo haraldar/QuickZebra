@@ -1,18 +1,7 @@
 # QuickZebra
-A C# class library for creating ZPL code from C# code. Written to work with at least labelary. There are different approaches with the same result in this library, which will be displayed in Program.cs.
 
----
+A C# class library for creating ZPL code from C# code. Written to work with at least labelary's API.
 
-### 1 - The QuickZebra.Absolute namespace
+The different approaches and generally samples for this library will be displayed in Program.cs.
 
-This namespace works with absolute positional values.
-
-Progress stage: Almost done.
-
----
-
-### 2 - The QuickZebra.Relative namespace
-
-This namespace works with relative reverese engineered values and allows for a more schematic approach, just as one would do when working with HTML or XML/XAML.
-
-Progress stage: A thought and a work in progress.
+One of the goals of this library is to allow for absolute positioning of the elements as well as relative positioning.
