@@ -10,7 +10,7 @@ namespace QuickZebra.Absolute
     public class ZebraLabel
     {
         #region properties
-        private List<IZebraField> fields = new();
+        public List<IZebraField> Fields = new();
         private int _density;
         private char _quality;
         private int _width;
@@ -37,94 +37,68 @@ namespace QuickZebra.Absolute
         }
 
         /// <summary>
-        /// Add on ZebraField to the labels list.
+        /// Add one ZebraField to the labels list.
         /// </summary>
         /// <param name="field">The field to add.</param>
         public void AddField(IZebraField field)
-            => fields.Add(field);
+            => Fields.Add(field);
 
         /// <summary>
-        /// Adds all the fields from a list to the labels list.
+        /// Adds all the Fields from a list to the labels list.
         /// </summary>
-        /// <param name="fieldList">The list containing the fields to add.</param>
+        /// <param name="fieldList">The list containing the Fields to add.</param>
         public void AddFields(List<IZebraField> fieldList)
-            => fieldList.ForEach(field => fields.Add(field));
+            => fieldList.ForEach(field => Fields.Add(field));
 
-        //// DEPRECATED
-        //public void AddText(string text, int x = 0, int y = 0,
-        //    bool invertIfOverlap = false)
-        //    => fields.Add(new ZebraText(text) { X = x, Y = y,
-        //        invertOnOverlap=invertIfOverlap});
-
-        // NEW
-        public List<IZebraField> AddText(string text, (int x, int y) loc, bool invertIfOverlap = false)
-            => new(fields.Append(new ZebraText(text)
+        public ZebraLabel AddText(string text, (int x, int y) loc, bool invertIfOverlap = false)
+        {
+            AddField(new ZebraText(text)
             {
                 X = loc.x,
                 Y = loc.y,
-                invertOnOverlap=invertIfOverlap
-            }));
-
-        //// DEPRECATED
-        //public void AddMultipleText(List<string> dataStrings, int x = 0, int y = 0,
-        //    int xIncrement = 0, int yIncrement = 40, bool invertIfOverlap = false)
-        //    => fields.AddRange(new ZebraText().FromList(dataStrings, x, y,
-        //        xIncrement, yIncrement, invertIfOverlap));
-
-        // NEW
-        public List<IZebraField> AddMultipleText(List<string> dataStrings, (int? x, int? y) loc, (int? x, int? y) incr,
-            bool invertIfOverlap = false)
-        {
-            fields.AddRange(new ZebraText()
-                .FromList(dataStrings, loc.x ?? 0, loc.y ?? 0, incr.x ?? 0, incr.y ?? 40, invertIfOverlap));
-            return fields;
+                invertOnOverlap = invertIfOverlap
+            });
+            return this;
         }
 
-        //// DEPRECATED
-        //public void SetFont(char font = 'A', int height = 30, int width = 0)
-        //    => fields.Add(new ZebraFont(font)
-        //    {
-        //        Height = height,
-        //        Width = width
-        //    });
+        public ZebraLabel AddMultipleText(List<string> dataStrings, (int? x, int? y) loc, (int? x, int? y) incr,
+            bool invertIfOverlap = false)
+        {
+            Fields.AddRange(new ZebraText()
+                .FromList(dataStrings, loc.x ?? 0, loc.y ?? 0, incr.x ?? 0, incr.y ?? 40, invertIfOverlap));
+            return this;
+        }
 
-        // NEW
-        public List<IZebraField> SetFont((int? height, int? width) dims, char font = 'A')
-            => new(fields.Append(new ZebraFont(font)
+        public ZebraLabel SetFont((int? height, int? width) dims, char font = 'A')
+        {
+            AddField(new ZebraFont(font)
             {
                 Height = dims.height ?? 30,
                 Width = dims.width ?? 0
-            }));
+            });
+            return this;
+        }
 
-        // NEW
-        public List<IZebraField> SetFont(char font = 'A')
-            => new(fields.Append(new ZebraFont(font)
+        public ZebraLabel SetFont(char font = 'A')
+        {
+            AddField(new ZebraFont(font)
             {
                 Height = 30,
                 Width = 0
-            }));
+            });
+            return this;
+        }
 
-        // NEW
-        public List<IZebraField> AddComment(string comment)
-            => new(fields.Append(new ZebraComment(comment)));
+        public ZebraLabel AddComment(string comment)
+        {
+            AddField(new ZebraComment(comment));
+            return this;
+        }
 
-        //// DEPRECATED
-        //public void DrawBox(int x = 0, int y = 0, int height = 1, int width = 1,
-        //    int thickness = 1, char color = 'B', int rounding = 0,
-        //    bool invertIfOverlap = false, int? xy = null)
-        //    => fields.Add(new ZebraGraphicalBox(thickness, color, rounding)
-        //    {
-        //        X = x,
-        //        Y = y,
-        //        Width = xy ?? width,
-        //        Height = xy ?? height,
-        //        invertOnOverlap = invertIfOverlap
-        //    });
-
-        // NEW
-        public void DrawBox((int x, int y) loc, (int width, int height, int thickness) dims,
+        public ZebraLabel DrawBox((int x, int y) loc, (int width, int height, int thickness) dims,
             char color = 'B', int rounding = 0, bool invertIfOverlap = false)
-            => fields.Add(new ZebraGraphicalBox(dims.thickness, color, rounding)
+        {
+            AddField(new ZebraGraphicalBox(dims.thickness, color, rounding)
             {
                 X = loc.x,
                 Y = loc.y,
@@ -132,40 +106,63 @@ namespace QuickZebra.Absolute
                 Height = dims.height,
                 invertOnOverlap = invertIfOverlap
             });
+            return this;
+        }
 
-        // USELESS
-        // DEPRECATED
-        public void SetPlaceHolder(string id)
-            => fields.Add(new ZebraPlaceHolder(id));
+        public ZebraLabel SetPlaceHolder(string id)
+        {
+            AddField(new ZebraPlaceHolder(id));
+            return this;
+        }
 
-        public void ConfigureBarcode(int width = 2, double widthRatio = 3.0, int height = 10)
-            => fields.Add(new ZebraBarcodeConfig(width, widthRatio, height));
+        public ZebraLabel ConfigureBarcode(int width = 2, double widthRatio = 3.0, int height = 10)
+        {
+            AddField(new ZebraBarcodeConfig(width, widthRatio, height));
+            return this;
+        }
 
-        public void DrawBarCode(string content, int x = 0, int y = 0, char? orientation = null,
+        public ZebraLabel DrawBarCode(string content, int x = 0, int y = 0, char? orientation = null,
             int? height = null, char? line = null, char? lineAbove = null,
             char? checkDigit = null, char? mode = null, bool invertIfOverlap = false)
-            => fields.Add(new ZebraBarcode(content, orientation, height, line, lineAbove, checkDigit, mode)
+        {
+            AddField(new ZebraBarcode(content, orientation, height, line, lineAbove, checkDigit, mode)
             {
                 X = x,
                 Y = y,
                 invertOnOverlap = invertIfOverlap
             });
+            return this;
+        }
+
+        // offset = null means no offset, <0 means calculate automatically, >=0 means take the given offset
+        public ZebraLabel MergeLabels(ZebraLabel label, int? offset = null)
+        {
+            this.Fields.AddRange(label.Fields);
+            return this;
+        }
+
+        // offset = null means no offset, <0 means calculate automatically, >=0 means take the given offset
+        public ZebraLabel MergeLabels(List<ZebraLabel> labels, int? offset = null)
+        {
+            labels.ForEach(label => this.Fields.AddRange(label.Fields));
+            return this;
+        }
 
         /// <summary>
         /// Replaces the placeholder with the matching id.
         /// </summary>
         /// <param name="id">The id to match.</param>
-        /// <param name="insertFields">The fields to insert.</param>
-        /// <returns>The modified list of all fields.</returns>
+        /// <param name="insertFields">The Fields to insert.</param>
+        /// <returns>The modified list of all Fields.</returns>
         public List<IZebraField> ReplaceHolder(string id, List<IZebraField> insertFields)
         {
-            int index = fields.FindIndex(f => f.GetId() == id);
+            int index = Fields.FindIndex(f => f.GetId() == id);
             if (index != -1)
             {
-                fields.RemoveAt(index);
-                fields.InsertRange(index, insertFields);
+                Fields.RemoveAt(index);
+                Fields.InsertRange(index, insertFields);
             }
-            return fields;
+            return Fields;
         }
 
         /// <summary>
@@ -173,10 +170,10 @@ namespace QuickZebra.Absolute
         /// </summary>
         /// <param name="wrap">Wrap return string into XA and XZ. Defaults to true.</param>
         /// <param name="newlined">Newline the return string. Defaults to false.</param>
-        /// <returns></returns>
+        /// <returns>The ZPL code string that defines the label contents.</returns>
         public string GetLabelString(bool wrap = true, bool newlined = false)
         {
-            List<string> zebras = fields.Select(field => field.Zebrify()).ToList();
+            List<string> zebras = Fields.Select(field => field.Zebrify()).ToList();
             if (wrap) zebras = zebras.Prepend(ZebraLexicon.XA).Append(ZebraLexicon.XZ).ToList();
             return string.Join((newlined) ? "\n" : "", zebras);
         }
