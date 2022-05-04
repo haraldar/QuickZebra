@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace QuickZebra.Absolute
+namespace QuickZebra.Options
 {
     /// <summary>
     /// Contains the most important ZPL tags.
@@ -12,9 +12,9 @@ namespace QuickZebra.Absolute
     public static class ZebraLexicon
     {
         /// <summary>
-        /// Configure current field as Code 128 barcode.
+        /// Indicate Barcode Option coming up.
         /// </summary>
-        public static readonly string BC = "^BC";
+        public static readonly string B = "^B";
 
         /// <summary>
         /// Configure global barcode defaults.
