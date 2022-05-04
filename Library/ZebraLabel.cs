@@ -4,8 +4,10 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using QuickZebra.Elements;
+using QuickZebra.Options;
 
-namespace QuickZebra.Absolute
+namespace QuickZebra
 {
     public class ZebraLabel
     {
@@ -50,6 +52,13 @@ namespace QuickZebra.Absolute
         public void AddFields(List<IZebraField> fieldList)
             => fieldList.ForEach(field => Fields.Add(field));
 
+        /// <summary>
+        /// Create a text field.
+        /// </summary>
+        /// <param name="text">The text to create.</param>
+        /// <param name="loc">The starting coordinates of the field.</param>
+        /// <param name="invertIfOverlap">A flag to invert on overlap.</param>
+        /// <returns>The current ZebraLabel.</returns>
         public ZebraLabel AddText(string text, (int x, int y) loc, bool invertIfOverlap = false)
         {
             AddField(new ZebraText(text)
@@ -61,6 +70,14 @@ namespace QuickZebra.Absolute
             return this;
         }
 
+        /// <summary>
+        /// Create multiple text Fields from a list of strings.
+        /// </summary>
+        /// <param name="dataStrings">The list of strings to add.</param>
+        /// <param name="loc">The starting coordinates of the first string.</param>
+        /// <param name="incr">The vertical and horizontal incrementation per string.</param>
+        /// <param name="invertIfOverlap">A flag to invert on overlap.</param>
+        /// <returns>The current ZebraLabel.</returns>
         public ZebraLabel AddMultipleText(List<string> dataStrings, (int? x, int? y) loc, (int? x, int? y) incr,
             bool invertIfOverlap = false)
         {
@@ -69,6 +86,12 @@ namespace QuickZebra.Absolute
             return this;
         }
 
+        /// <summary>
+        /// Sets the current font until it will be changed again.
+        /// </summary>
+        /// <param name="dims">The height and width dimensions.</param>
+        /// <param name="font">The typical ZPL font selection.</param>
+        /// <returns>The current ZebraLabel.</returns>
         public ZebraLabel SetFont((int? height, int? width) dims, char font = 'A')
         {
             AddField(new ZebraFont(font)
@@ -79,6 +102,11 @@ namespace QuickZebra.Absolute
             return this;
         }
 
+        /// <summary>
+        /// Sets the current font until it will be changed again.
+        /// </summary>
+        /// <param name="font">The typical ZPL font selection.</param>
+        /// <returns>The current ZebraLabel.</returns>
         public ZebraLabel SetFont(char font = 'A')
         {
             AddField(new ZebraFont(font)
@@ -89,12 +117,26 @@ namespace QuickZebra.Absolute
             return this;
         }
 
+        /// <summary>
+        /// Adds a comment field-
+        /// </summary>
+        /// <param name="comment">The comment string to add.</param>
+        /// <returns>The current ZebraLabel.</returns>
         public ZebraLabel AddComment(string comment)
         {
             AddField(new ZebraComment(comment));
             return this;
         }
 
+        /// <summary>
+        /// Draws a rectangular box.
+        /// </summary>
+        /// <param name="loc">The starting coordinates of the box.</param>
+        /// <param name="dims">The width and height dimensions.</param>
+        /// <param name="color">Sets the color.</param>
+        /// <param name="rounding">Rounds the corners of the box.</param>
+        /// <param name="invertIfOverlap">A flag to invert on overlap.</param>
+        /// <returns>The current ZebraLabel.</returns>
         public ZebraLabel DrawBox((int x, int y) loc, (int width, int height, int thickness) dims,
             char color = 'B', int rounding = 0, bool invertIfOverlap = false)
         {
@@ -109,29 +151,61 @@ namespace QuickZebra.Absolute
             return this;
         }
 
+        /// <summary>
+        /// Sets a placeholder that can be replaced later.
+        /// </summary>
+        /// <param name="id">The given ID by the user.</param>
+        /// <returns>The current ZebraLabel.</returns>
         public ZebraLabel SetPlaceHolder(string id)
         {
             AddField(new ZebraPlaceHolder(id));
             return this;
         }
 
-        public ZebraLabel ConfigureBarcode(int width = 2, double widthRatio = 3.0, int height = 10)
+        /// <summary>
+        /// Sets the barcode configuration.
+        /// </summary>
+        /// <param name="dims">Sets the height and width dimensions.</param>
+        /// <param name="widthRatio">Wide bar to narrom bar ratio.</param>
+        /// <returns>The current ZebraLabel.</returns>
+        public ZebraLabel ConfigureBarcode((int? width, int? height) dims, double widthRatio = 3.0)
         {
-            AddField(new ZebraBarcodeConfig(width, widthRatio, height));
+            AddField(new ZebraBarcodeConfig(dims.width ?? 2, widthRatio, dims.height ?? 10));
             return this;
         }
 
-        public ZebraLabel DrawBarCode(string content, int x = 0, int y = 0, char? orientation = null,
-            int? height = null, char? line = null, char? lineAbove = null,
-            char? checkDigit = null, char? mode = null, bool invertIfOverlap = false)
+        /// <summary>
+        /// Adds a barcode field.
+        /// </summary>
+        /// <param name="content">The content of the barcode.</param>
+        /// <param name="loc">The starting coordinates of the barcode.</param>
+        /// <param name="orientation">The orientation of the barcode. (Options are: ...)</param>
+        /// <param name="height">The height of the barcode.</param>
+        /// <param name="line">TODO</param>
+        /// <param name="lineAbove">TODO</param>
+        /// <param name="checkDigit">TODO</param>
+        /// <param name="mode">TODO</param>
+        /// <param name="invertIfOverlap">Inverts the barcode where it overlaps.</param>
+        /// <returns>The current ZebraLabel.</returns>
+        public ZebraLabel DrawBarCode(string content, (int? x, int? y) loc, char? type = null,
+            char? orientation = null, int? height = null, bool line = true, bool lineAbove = false,
+            bool checkDigit = false, char? mode = null, bool invertIfOverlap = false)
         {
-            AddField(new ZebraBarcode(content, orientation, height, line, lineAbove, checkDigit, mode)
+            AddField(new ZebraBarcode(content, type, orientation, height, line, lineAbove, checkDigit, mode)
             {
-                X = x,
-                Y = y,
+                X = loc.x ?? 0,
+                Y = loc.y ?? 0,
                 invertOnOverlap = invertIfOverlap
             });
             return this;
+        }
+
+        // returns leftmost x, and lowest y
+        // elementBased if the new cordinates are to be of the lowest y currently and
+        // x of label start x or x of max leftmost x of any element
+        private (int x, int y) GetMaxLocation(List<IZebraField> fields, bool elementBased = true)
+        {
+            return (0, 0);
         }
 
         // offset = null means no offset, <0 means calculate automatically, >=0 means take the given offset
