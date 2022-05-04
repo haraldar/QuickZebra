@@ -36,7 +36,7 @@ namespace QuickZebra.Elements
 
         // TODO ZBarcodeType needs to return a custom type, that can be converted with e.g. toString to the correct param later
         string IZebraField.Zebrify()
-            => EncapsuleLine(_type + _bcOrientation?.ToString() + WithComma(_bcHeight)
+            => EncapsuleLine(ZebraLexicon.B + _type + _bcOrientation?.ToString() + WithComma(_bcHeight)
                 + WithComma(_line) + WithComma(_lineAbove) + WithComma(_checkDigit) + WithComma(_mode)
                 + ZebraLexicon.FD + _content);
     }
