@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using QuickZebra.Options;
 
 // NOTE: Give possibility to add a table like structure.
 
-namespace QuickZebra.Absolute
+namespace QuickZebra.Elements
 {
     public class ZebraText : ZebraField, IZebraField
     {
@@ -23,9 +24,11 @@ namespace QuickZebra.Absolute
             List<IZebraField> textFields = new();
             foreach (var dataString in dataStrings)
             {
-                textFields.Add(new ZebraText(dataString) 
-                { 
-                    X = xPos, Y = yPos, invertOnOverlap = invertIfOverlap
+                textFields.Add(new ZebraText(dataString)
+                {
+                    X = xPos,
+                    Y = yPos,
+                    invertOnOverlap = invertIfOverlap
                 });
                 xPos += xIncrement;
                 yPos += yIncrement;

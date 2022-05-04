@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using QuickZebra.Options;
 
-namespace QuickZebra.Absolute
+namespace QuickZebra.Elements
 {
     public class ZebraField
     {
@@ -93,6 +94,9 @@ namespace QuickZebra.Absolute
         /// <returns>The full string line.</returns>
         public string EncapsuleLine(string fieldContent)
             => GetPosition() + ((invertOnOverlap) ? ZebraLexicon.FR : "") + fieldContent + ZebraLexicon.FS;
+
+        public char ToAnswer(bool choice)
+            => choice ? 'Y' : 'N';
     }
 
     /// <summary>
