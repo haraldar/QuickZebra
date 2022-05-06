@@ -24,13 +24,6 @@ List<string> miscData = new()
     "REF2 BL4H8"
 };
 
-// All methods return ZebraLabel, merging labels possible, improved params.
-
-// VERSION 3: Small, but effective changes to V2:
-//              (1) using tuples for params
-//              (2) returning the ZebraLabel with every method to allow chaining
-//              (3) added a MergeLabels() method that allows merging labels and sections
-
 // Section 1: Sender Data
 ZebraLabel section1 = new();
 section1.SetFont(font: '0', height: 60)
