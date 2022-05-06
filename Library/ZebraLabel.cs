@@ -28,8 +28,8 @@ namespace QuickZebra
         /// <param name="width">The label width (in inches).</param>
         /// <param name="height">The label height (in inches).</param>
         /// <param name="padding">The inner padding (in inches).</param>
-        public ZebraLabel(int density = 8, char quality = 'G', int width = 4,
-            int height = 6, int padding = 0)
+        public ZebraLabel(int dpi = 203, int density = 8, char quality = 'G', int width = 4,
+            int height = 6, int padding = 0, bool useInches = true)
         {
             _density = density;
             _quality = quality;
@@ -107,18 +107,18 @@ namespace QuickZebra
         /// </summary>
         /// <param name="font">The typical ZPL font selection.</param>
         /// <returns>The current ZebraLabel.</returns>
-        public ZebraLabel SetFont(char font = 'A')
+        public ZebraLabel SetFont(int width = 0, int height = 30, char font = 'A')
         {
             AddField(new ZebraFont(font)
             {
-                Height = 30,
-                Width = 0
+                Height = height,
+                Width = width
             });
             return this;
         }
 
         /// <summary>
-        /// Adds a comment field-
+        /// Adds a comment field.
         /// </summary>
         /// <param name="comment">The comment string to add.</param>
         /// <returns>The current ZebraLabel.</returns>
@@ -146,6 +146,29 @@ namespace QuickZebra
                 Y = loc.y,
                 Width = dims.width,
                 Height = dims.height,
+                invertOnOverlap = invertIfOverlap
+            });
+            return this;
+        }
+
+        /// <summary>
+        /// Draws a rectangular box.
+        /// </summary>
+        /// <param name="loc">The starting coordinates of the box.</param>
+        /// <param name="dims">The width and height dimensions.</param>
+        /// <param name="color">Sets the color.</param>
+        /// <param name="rounding">Rounds the corners of the box.</param>
+        /// <param name="invertIfOverlap">A flag to invert on overlap.</param>
+        /// <returns>The current ZebraLabel.</returns>
+        public ZebraLabel DrawBox((int x, int y) loc, int dims,
+            char color = 'B', int rounding = 0, bool invertIfOverlap = false)
+        {
+            AddField(new ZebraGraphicalBox(dims, color, rounding)
+            {
+                X = loc.x,
+                Y = loc.y,
+                Width = dims,
+                Height = dims,
                 invertOnOverlap = invertIfOverlap
             });
             return this;
@@ -200,14 +223,6 @@ namespace QuickZebra
             return this;
         }
 
-        // returns leftmost x, and lowest y
-        // elementBased if the new cordinates are to be of the lowest y currently and
-        // x of label start x or x of max leftmost x of any element
-        private (int x, int y) GetMaxLocation(List<IZebraField> fields, bool elementBased = true)
-        {
-            return (0, 0);
-        }
-
         // offset = null means no offset, <0 means calculate automatically, >=0 means take the given offset
         public ZebraLabel MergeLabels(ZebraLabel label, int? offset = null)
         {
@@ -252,6 +267,30 @@ namespace QuickZebra
             return string.Join((newlined) ? "\n" : "", zebras);
         }
 
+        // returns leftmost x, and lowest y
+        // elementBased if the new cordinates are to be of the lowest y currently and
+        // x of label start x or x of max leftmost x of any element
+        private (int x, int y) GetMaxLocation(List<IZebraField> fields, bool elementBased = true)
+        {
+            return (0, 0);
+        }
+
+        private double mmToInches(int mm, bool? round = null)
+        {
+            double inches = mm / 0.0393700874;
+            if (round != null)
+            {
+                inches -= inches % 1;
+                if (round == true) inches++;
+            }
+            return inches;
+        }
+
+        public (int x, int y) GetLabelDimensionsInDots()
+        {
+            return (0,0);
+        }
+
         /// <summary>
         /// Send the current CollectedLabel as 
         /// </summary>
@@ -267,7 +306,8 @@ namespace QuickZebra
             byte[] zpl = Encoding.UTF8.GetBytes(zplCode);
 
             // adjust print density (8dpmm), label width (4 inches), label height (6 inches), and label index (0) as necessary
-            var request = (HttpWebRequest)WebRequest.Create("http://api.labelary.com/v1/printers/8dpmm/labels/4x6/0/");
+            var url = string.Format("http://api.labelary.com/v1/printers/{0}dpmm/labels/{1}x{2}/0/", _density, _width, _height);
+            var request = (HttpWebRequest)WebRequest.Create(url);
             request.Method = "POST";
             if (labelFormat == "pdf")
             {
@@ -288,7 +328,6 @@ namespace QuickZebra
                 responseStream.CopyTo(fileStream);
                 responseStream.Close();
                 fileStream.Close();
-                Console.WriteLine("hi");
             }
             catch (WebException e)
             {
