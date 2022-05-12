@@ -1,6 +1,7 @@
 ﻿// This constellation of code creates the example piece on the labelary.com's Online Viewer.
 
 using QuickZebra;
+using QuickZebra.Options;
 
 List<string> senderData = new()
 {
@@ -25,8 +26,8 @@ List<string> miscData = new()
 };
 
 // Section 1: Sender Data
-ZebraLabel section1 = new();
-section1.SetFont(font: '0', height: 60)
+var section1 = new ZebraLabel()
+    .SetFont(font: '0', height: 60)
     .DrawBox(loc: (50, 50), dims: 100)
     .DrawBox(loc: (75, 75), dims: 100, invertIfOverlap: true)
     .DrawBox(loc: (93, 93), dims: 40)
@@ -36,8 +37,8 @@ section1.SetFont(font: '0', height: 60)
     .DrawBox(loc: (50, 250), dims: (700, 3, 3));
 
 // Section 2: Recipient Data
-ZebraLabel section2 = new();
-section2.DrawBox(loc: (600, 300), dims: (150, 150, 3))
+var section2 = new ZebraLabel()
+    .DrawBox(loc: (600, 300), dims: (150, 150, 3))
     .SetFont()
     .AddMultipleText(receiverData, loc: (50, 300))
     .SetFont(height: 15)
@@ -46,22 +47,22 @@ section2.DrawBox(loc: (600, 300), dims: (150, 150, 3))
     .DrawBox(loc: (50, 500), dims: (700, 3, 3));
 
 // Section 3: Barcode
-ZebraLabel section3 = new();
-section3.ConfigureBarcode(dims: (5, 270))
+var section3 = new ZebraLabel()
+    .ConfigureBarcode(dims: (5, 270))
     .DrawBarCode("12345678", loc: (100, 550));
 
 // Section 4: Final Data
-ZebraLabel section4 = new();
-section4.DrawBox(loc: (50, 900), dims: (700, 250, 3))
+var section4 = new ZebraLabel()
+    .DrawBox(loc: (50, 900), dims: (700, 250, 3))
     .SetFont(font: '0', height: 40)
     .AddMultipleText(miscData, loc: (100, 960), down: 50)
     .DrawBox(loc: (400, 900), dims: (3, 250, 3))
     .SetFont(font: '0', height: 190)
     .AddText("CA", loc: (470, 955));
 
-// Build the full label.
+//Build the full label.
 var sections = new List<ZebraLabel>() { section1, section2, section3, section4 };
-var labelV3 = new ZebraLabel(dims: (65, 100, true))
+var labelV3 = new ZebraLabel(dims: (4, 6, false))
     .MergeLabels(sections);
 Console.WriteLine(labelV3.GetLabelString(newlined: true));
 labelV3.CallLabelary(labelV3.GetLabelString(), labelFormat: "png");
