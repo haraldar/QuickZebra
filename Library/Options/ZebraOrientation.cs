@@ -6,18 +6,26 @@ using System.Threading.Tasks;
 
 namespace QuickZebra.Options
 {
-    public static class ZOrientation
+    public class ZOrientation
     {
         /// <summary> Default orientation. </summary>
-        public static readonly char N = 'N';
+        public static readonly ZOrientation N = new("N");
 
         /// <summary> 90 degrees rotated clockwise. </summary>
-        public static readonly char R = 'R';
+        public static readonly ZOrientation R = new("R");
 
         /// <summary> Inverted 180 degrees. </summary>
-        public static readonly char I = 'I';
+        public static readonly ZOrientation I = new("I");
 
         /// <summary> Read from bottom up. 270 degrees. </summary>
-        public static readonly char B = 'B';
+        public static readonly ZOrientation B = new("B");
+
+        public string Orientation = "";
+
+        public ZOrientation(string orientation)
+            => Orientation = orientation;
+
+        public override string ToString()
+            => Orientation;
     }
 }
