@@ -13,7 +13,7 @@ namespace QuickZebra
     {
         #region properties
         public List<IZebraField> Fields = new();
-        private (int dpu, bool metric) _density;
+        private int _dpu;
         private char _quality;
         private (int width, int height, bool metric) _dims;
         private int _padding;
@@ -22,18 +22,17 @@ namespace QuickZebra
         /// <summary>
         /// The constructor for a Format.
         /// </summary>
-        /// <param name="density">The print density (in dpmm).</param>
+        /// <param name="dpu">The print density (in dpmm).</param>
         /// <param name="quality">The print quality. G for Grayscale, B for Bitonal.</param>
-        /// <param name="width">The label width (in inches).</param>
-        /// <param name="height">The label height (in inches).</param>
+        /// <param name="dims">The labels' dimensions width, height and if metric.</param>
         /// <param name="padding">The inner padding (in inches).</param>
-        public ZebraLabel((int dpu, bool metric)? density = null, (int width, int height, bool metric)? dims = null,
+        public ZebraLabel(ZResolution? dpu = null, (int width, int height, bool metric)? dims = null,
             char quality = 'G', int padding = 0)
         {
             _dims = dims ?? (4, 6, false);
             if (_dims.metric)
                 (_dims.width, _dims.height) = (MmToNextInch(_dims.width), MmToNextInch(_dims.height));
-            _density = density ?? (8, true);
+            _dpu = (dpu ?? ZResolution.M8).Dots;
             _quality = quality;
             _padding = padding;
         }
@@ -199,9 +198,9 @@ namespace QuickZebra
         /// <param name="mode">TODO</param>
         /// <param name="invertIfOverlap">Inverts the barcode where it overlaps.</param>
         /// <returns>The current ZebraLabel.</returns>
-        public ZebraLabel DrawBarCode(string content, (int? x, int? y) loc, char? type = null,
-            char? orientation = null, int? height = null, bool line = true, bool lineAbove = false,
-            bool checkDigit = false, char? mode = null, bool invertIfOverlap = false)
+        public ZebraLabel DrawBarCode(string content, (int? x, int? y) loc, ZBarcodeType? type = null,
+            ZOrientation? orientation = null, int? height = null, bool line = true, bool lineAbove = false,
+            bool checkDigit = false, ZMode? mode = null, bool invertIfOverlap = false)
         {
             AddField(new ZebraBarcode(content, type, orientation, height, line, lineAbove, checkDigit, mode)
             {
@@ -242,11 +241,11 @@ namespace QuickZebra
         private static int MmToNextInch(int mm)
             => (int) ((mm / 25.4) - (mm / 25.4) % 1 + 1);
 
-        private static (int x, int y) GetLabelDimsInDots(int width, int height, int dpi, bool metric = false)
+        private static (int x, int y) GetLabelDimsInDots(int width, int height, int dpu, bool metric = false)
         {
             double sysConverter = metric ? 25.4 : 1;
             (double xDots, double yDots) = (width / sysConverter, height / sysConverter);
-            return ((int) xDots * dpi, (int) yDots * dpi);
+            return ((int) xDots * dpu, (int) yDots * dpu);
         }
 
         // returns leftmost x, and lowest y
@@ -262,6 +261,8 @@ namespace QuickZebra
         /// </summary>
         public void CallLabelary(string zplCode, string labelFormat = "pdf")
         {
+            // Check if the elements in the label system are deeper than print size
+
             // Check if the format parameter is a valid
             var validFormats = new[] { "pdf", "png" };
             if (!validFormats.Contains(labelFormat))
@@ -272,7 +273,7 @@ namespace QuickZebra
             // Start the request building process.
             byte[] zpl = Encoding.UTF8.GetBytes(zplCode);
 
-            var url = string.Format("http://api.labelary.com/v1/printers/{0}dpmm/labels/{1}x{2}/0/", _density.dpu, _dims.width, _dims.height);
+            var url = string.Format("http://api.labelary.com/v1/printers/{0}dpmm/labels/{1}x{2}/0/", _dpu, _dims.width, _dims.height);
             Console.WriteLine(url);
             var request = (HttpWebRequest)WebRequest.Create(url);
             if (labelFormat == "pdf") request.Accept = "application/pdf";
