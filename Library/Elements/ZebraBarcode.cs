@@ -10,25 +10,25 @@ namespace QuickZebra.Elements
     public class ZebraBarcode : ZebraField, IZebraField
     {
         private string _content;
-        private char _type;
-        private char? _bcOrientation;
+        private string _type;
+        private string? _bcOrientation;
         private int? _bcHeight;
         private char _line;
         private char _lineAbove;
         private char _checkDigit;
-        private char? _mode;
+        private string? _mode;
 
-        public ZebraBarcode(string content, char? type = null, char? orientation = null, int? height = null,
-            bool line = true, bool lineAbove = false, bool checkDigit = false, char? mode = null)
+        public ZebraBarcode(string content, ZBarcodeType? type = null, ZOrientation? orientation = null,
+            int? height = null, bool line = true, bool lineAbove = false, bool checkDigit = false, ZMode? mode = null)
         {
             _content = content;
-            _type = type ?? ZBarcode.CODE128;
-            _bcOrientation = orientation ?? ZOrientation.N;
+            _type = (type ?? ZBarcodeType.CODE128).Type;
+            _bcOrientation = (orientation ?? ZOrientation.N).Orientation;
             _bcHeight = height;
             _line = ToAnswer(line);
             _lineAbove = ToAnswer(lineAbove);
             _checkDigit = ToAnswer(checkDigit);
-            _mode = mode ?? ZMode.CODE128.N;
+            _mode = (mode ?? ZMode.CODE128.N).Mode;
         }
 
         public string? GetId()
