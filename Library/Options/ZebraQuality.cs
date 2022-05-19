@@ -8,14 +8,17 @@ namespace QuickZebra.Options
 {
     public class ZQuality
     {
-        public ZQuality B { get => Make("B"); }
-        public ZQuality G { get => Make("G"); }
-        public ZQuality()
-        {
+        /// <summary>
+        /// Bitonal (B).
+        /// </summary>
+        public static readonly ZQuality B = new("B");
 
-        }
-
-        public ZQuality Make(string literal)
-            => ZQuality
+        /// <summary>
+        /// Grayscale (G).
+        /// </summary>
+        public static readonly ZQuality G = new("G");
+        public string Quality;
+        public ZQuality(string literal)
+            => Quality = literal;
     }
 }
