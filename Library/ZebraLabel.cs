@@ -14,7 +14,7 @@ namespace QuickZebra
         #region properties
         public List<IZebraField> Fields = new();
         private int _dpu;
-        private char _quality;
+        private string _quality;
         private (int width, int height, bool metric) _dims;
         private int _padding;
         #endregion properties
@@ -26,14 +26,14 @@ namespace QuickZebra
         /// <param name="quality">The print quality. G for Grayscale, B for Bitonal.</param>
         /// <param name="dims">The labels' dimensions width, height and if metric.</param>
         /// <param name="padding">The inner padding (in inches).</param>
-        public ZebraLabel(ZResolution? dpu = null, (int width, int height, bool metric)? dims = null,
-            char quality = 'G', int padding = 0)
+        public ZebraLabel(ZResolution? dpu = null, ZQuality? quality = null,
+            (int width, int height, bool metric)? dims = null, int padding = 0)
         {
             _dims = dims ?? (4, 6, false);
             if (_dims.metric)
                 (_dims.width, _dims.height) = (MmToNextInch(_dims.width), MmToNextInch(_dims.height));
-            _dpu = (dpu ?? ZResolution.M8).Dots;
-            _quality = quality;
+            _dpu = (int)(dpu ?? ZResolution.M8);
+            _quality = (quality ?? ZQuality.G).Quality;
             _padding = padding;
         }
 
@@ -190,19 +190,16 @@ namespace QuickZebra
         /// </summary>
         /// <param name="content">The content of the barcode.</param>
         /// <param name="loc">The starting coordinates of the barcode.</param>
-        /// <param name="orientation">The orientation of the barcode. (Options are: ...)</param>
-        /// <param name="height">The height of the barcode.</param>
-        /// <param name="line">TODO</param>
-        /// <param name="lineAbove">TODO</param>
-        /// <param name="checkDigit">TODO</param>
-        /// <param name="mode">TODO</param>
         /// <param name="invertIfOverlap">Inverts the barcode where it overlaps.</param>
         /// <returns>The current ZebraLabel.</returns>
-        public ZebraLabel DrawBarCode(string content, (int? x, int? y) loc, ZBarcodeType? type = null,
-            ZOrientation? orientation = null, int? height = null, bool line = true, bool lineAbove = false,
-            bool checkDigit = false, ZMode? mode = null, bool invertIfOverlap = false)
+        public ZebraLabel DrawBarCode(string content, (int? x, int? y) loc,
+            (int? width, int? height, double? ratio)? dims = null, ZBarcodeType? type = null,
+            bool invertIfOverlap = false)
         {
-            AddField(new ZebraBarcode(content, type, orientation, height, line, lineAbove, checkDigit, mode)
+            if (dims != null)
+                AddField(new ZebraBarcodeConfig(dims?.width ?? 2, dims?.ratio ?? 3.0, dims?.height ?? 10));
+
+            AddField(new ZebraBarcode(content, type)
             {
                 X = loc.x ?? 0,
                 Y = loc.y ?? 0,
@@ -241,18 +238,19 @@ namespace QuickZebra
         private static int MmToNextInch(int mm)
             => (int) ((mm / 25.4) - (mm / 25.4) % 1 + 1);
 
-        private static (int x, int y) GetLabelDimsInDots(int width, int height, int dpu, bool metric = false)
+        private static (int x, int y) GetMaxDots(int width, int height, int dpu, bool metric = false)
         {
-            double sysConverter = metric ? 25.4 : 1;
-            (double xDots, double yDots) = (width / sysConverter, height / sysConverter);
-            return ((int) xDots * dpu, (int) yDots * dpu);
+            double sysConverter = metric ? 1 : 25.4;
+            return ((int) (width * sysConverter * dpu), (int) (height * sysConverter * dpu));
         }
 
         // returns leftmost x, and lowest y
         // elementBased if the new cordinates are to be of the lowest y currently and
         // x of label start x or x of max leftmost x of any element
-        private (int x, int y) GetMaxLocation(List<IZebraField> fields, bool elementBased = true)
+        private static (int x, int y) GetMaxLocation(List<IZebraField> fields, bool elementBased = true)
         {
+            //foreach (var field in fields)
+            //    field.
             return (0, 0);
         }
 
@@ -262,13 +260,13 @@ namespace QuickZebra
         public void CallLabelary(string zplCode, string labelFormat = "pdf")
         {
             // Check if the elements in the label system are deeper than print size
+            Console.WriteLine(GetMaxDots(4, 6, 8, false));
+            Console.WriteLine(GetMaxDots(65, 100, 8, true));
 
             // Check if the format parameter is a valid
             var validFormats = new[] { "pdf", "png" };
             if (!validFormats.Contains(labelFormat))
-            {
                 throw new Exception("Invalid Format. Should be one of " + validFormats.ToString());
-            }
 
             // Start the request building process.
             byte[] zpl = Encoding.UTF8.GetBytes(zplCode);
@@ -276,7 +274,8 @@ namespace QuickZebra
             var url = string.Format("http://api.labelary.com/v1/printers/{0}dpmm/labels/{1}x{2}/0/", _dpu, _dims.width, _dims.height);
             Console.WriteLine(url);
             var request = (HttpWebRequest)WebRequest.Create(url);
-            if (labelFormat == "pdf") request.Accept = "application/pdf";
+            if (labelFormat == "pdf")
+                request.Accept = "application/pdf";
             request.Method = "POST";
             request.ContentType = "application/x-www-form-urlencoded";
             request.ContentLength = zpl.Length;
