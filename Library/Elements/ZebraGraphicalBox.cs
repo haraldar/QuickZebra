@@ -26,8 +26,8 @@ namespace QuickZebra.Elements
             => ZebraLexicon.GB + Width.ToString() + WithComma(Height) + WithComma(_thickness)
                 + WithComma(_color) + WithComma(_rounding);
 
-        public string? GetId()
-            => Id;
+        public (int x, int y, int w, int h) GetMaxDimensions()
+            => (X, Y, Width, Height);
 
         string IZebraField.Zebrify()
             => EncapsuleLine(DrawGraphicalBox());

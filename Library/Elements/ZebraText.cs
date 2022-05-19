@@ -36,8 +36,8 @@ namespace QuickZebra.Elements
             return textFields;
         }
 
-        public string? GetId()
-            => Id;
+        public (int x, int y, int w, int h) GetMaxDimensions()
+            => (X, Y, Width, Height);
 
         string IZebraField.Zebrify()
             => EncapsuleLine(ZebraLexicon.FD + _dataString);

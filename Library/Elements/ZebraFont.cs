@@ -19,8 +19,8 @@ namespace QuickZebra.Elements
             if (Width == 0) _fontW = null;
         }
 
-        public string? GetId()
-            => Id;
+        public (int x, int y, int w, int h) GetMaxDimensions()
+            => (X, Y, Width, Height);
 
         string IZebraField.Zebrify()
             => ZebraLexicon.CF + _font.ToString() + WithComma(Height)

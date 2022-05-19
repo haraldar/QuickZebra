@@ -17,8 +17,8 @@ namespace QuickZebra.Elements
             _ratio = widthRatio;
         }
 
-        public string? GetId()
-            => Id;
+        public (int x, int y, int w, int h) GetMaxDimensions()
+            => (X, Y, Width, Height);
 
         string IZebraField.Zebrify()
             => ZebraLexicon.BY + Width.ToString() + WithComma(_ratio) + WithComma(Height);

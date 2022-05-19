@@ -11,13 +11,6 @@ namespace QuickZebra.Elements
     {
         #region properties
 
-        private string? _id;
-        public string? Id
-        {
-            get => _id;
-            set => _id = value;
-        }
-
         private int _x;
         public int X
         {
@@ -95,7 +88,7 @@ namespace QuickZebra.Elements
         public string EncapsuleLine(string fieldContent)
             => GetPosition() + ((invertOnOverlap) ? ZebraLexicon.FR : "") + fieldContent + ZebraLexicon.FS;
 
-        public char ToAnswer(bool choice)
+        public static char ToAnswer(bool choice)
             => choice ? 'Y' : 'N';
     }
 
@@ -109,6 +102,6 @@ namespace QuickZebra.Elements
         /// </summary>
         /// <returns>The ZPL code string.</returns>
         public string Zebrify();
-        public string? GetId();
+        public (int x, int y, int w, int h) GetMaxDimensions();
     }
 }

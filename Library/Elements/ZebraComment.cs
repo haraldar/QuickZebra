@@ -13,8 +13,8 @@ namespace QuickZebra.Elements
         public ZebraComment(string comment)
             => _comment = comment;
 
-        public string? GetId()
-            => Id;
+        public (int x, int y, int w, int h) GetMaxDimensions()
+            => (X, Y, Width, Height);
 
         string IZebraField.Zebrify()
             => ZebraLexicon.FX + " " + _comment;
