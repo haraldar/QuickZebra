@@ -1,0 +1,3 @@
+QuickZebra/.vs
+QuickZebra/QuickZebra/bin
+QuickZebra/QuickZebra/obj
