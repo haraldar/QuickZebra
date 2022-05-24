@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
@@ -16,6 +16,7 @@
     <RepositoryUrl>https://github.com/haraldar/QuickZebra</RepositoryUrl>
     <PackageIcon>icon_qz.jpg</PackageIcon>
     <ApplicationIcon>icon_qz.ico</ApplicationIcon>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
   <ItemGroup>
