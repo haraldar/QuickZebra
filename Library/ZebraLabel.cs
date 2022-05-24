@@ -235,68 +235,196 @@ namespace QuickZebra
             return string.Join((newlined) ? "\n" : "", zebras);
         }
 
+        /// <summary>
+        /// Rounds up an amount of mm's to the next bigger inch.
+        /// </summary>
+        /// <param name="mm">The amount millimeters.</param>
+        /// <returns>The next bigger inch.</returns>
         private static int MmToNextInch(int mm)
             => (int) ((mm / 25.4) - (mm / 25.4) % 1 + 1);
 
+        /// <summary>
+        /// Converts a given number from either metric or US system to dots.
+        /// </summary>
+        /// <param name="width">The width.</param>
+        /// <param name="height">The height.</param>
+        /// <param name="dpu">The dots per unit.</param>
+        /// <param name="metric">true if metric system else false.</param>
+        /// <returns>A tuple that represents the max possible x and y dots.</returns>
         private static (int x, int y) GetMaxDots(int width, int height, int dpu, bool metric = false)
-        {
-            double sysConverter = metric ? 1 : 25.4;
-            return ((int) (width * sysConverter * dpu), (int) (height * sysConverter * dpu));
-        }
+            => ((int)(width * (metric ? 1 : 25.4) * dpu), (int)(height * (metric ? 1 : 25.4) * dpu));
 
-        // returns leftmost x, and lowest y
-        // elementBased if the new cordinates are to be of the lowest y currently and
-        // x of label start x or x of max leftmost x of any element
-        private static (int x, int y) GetMaxLocation(List<IZebraField> fields, bool elementBased = true)
+        /// <summary>
+        /// Gets the approximately max coordinates used in the label.
+        /// TODO width calculation for ZebraText is not yet entirely correct.
+        /// TODO I might use recursion here.
+        /// </summary>
+        /// <param name="fields">The list of the Zebra elements.</param>
+        /// <returns>A tuple that contains the max used coordinates in x and y.</returns>
+        private static (int x, int y) GetMaxLocation(List<IZebraField> fields)
         {
-            //foreach (var field in fields)
-            //    field.
-            return (0, 0);
+            (int xMax, int yMax) = (0, 0);
+            (int w, int h) font = (0, 0);
+
+            foreach (var field in fields)
+            {
+                var (x, y, w, h) = field.GetMaxDimensions();
+                if (field.GetType() == typeof(ZebraFont))
+                {
+                    font = (w, h);
+                }
+                else if (field.GetType() == typeof(ZebraText))
+                {
+                    if (x + font.w >= xMax) xMax = x + font.w;
+                    if (y + font.h >= yMax) yMax = y + font.h;
+                }
+                else
+                {
+                    if (x + w >= xMax) xMax = x + w;
+                    if (y + h >= yMax) yMax = y + h;
+                }
+            }
+            return (xMax, yMax);
         }
 
         /// <summary>
-        /// Send the current CollectedLabel as 
+        /// Checks if the inner bounds required exceed the given outer bounds.
         /// </summary>
-        public void CallLabelary(string zplCode, string labelFormat = "pdf")
+        /// <param name="outer">The outer bounds.</param>
+        /// <param name="inner">The inner bounds.</param>
+        /// <returns>true if fully inside else false.</returns>
+        private static bool CheckWithinBounds((int x, int y) outer, (int x, int y) inner)
+            => outer.x >= inner.x && outer.y >= inner.y;
+
+        /// <summary>
+        /// Sends the ZPL code to the labelary API and retrieves the rendered label as either png or pdf. 
+        /// </summary>
+        /// <param name="zplCode">The full ZPL code string.</param>
+        /// <param name="labelFormat">The rendered label's type (pdf / png).</param>
+        /// <param name="borderCheck">Option to check using an exception wether the elements exceed the borders of the label.</param>
+        /// <exception cref="Exception">Thrown if label borders are exceeded by the elements inside.</exception>
+        public void CallLabelary(string zplCode, string labelFormat = "pdf", bool borderCheck = false)
         {
-            // Check if the elements in the label system are deeper than print size
-            Console.WriteLine(GetMaxDots(4, 6, 8, false));
-            Console.WriteLine(GetMaxDots(65, 100, 8, true));
+            // Check if the elements in the label system are exceeding the bounds of the label.
+            (int xDots, int yDots) = GetMaxDots(_dims.width, _dims.height, _dpu);
+            (int xMax, int yMax) = GetMaxLocation(Fields);
+            var within = CheckWithinBounds((xDots, yDots), (xMax, yMax));
 
-            // Check if the format parameter is a valid
-            var validFormats = new[] { "pdf", "png" };
-            if (!validFormats.Contains(labelFormat))
-                throw new Exception("Invalid Format. Should be one of " + validFormats.ToString());
-
-            // Start the request building process.
-            byte[] zpl = Encoding.UTF8.GetBytes(zplCode);
-
-            var url = string.Format("http://api.labelary.com/v1/printers/{0}dpmm/labels/{1}x{2}/0/", _dpu, _dims.width, _dims.height);
-            Console.WriteLine(url);
-            var request = (HttpWebRequest)WebRequest.Create(url);
-            if (labelFormat == "pdf")
-                request.Accept = "application/pdf";
-            request.Method = "POST";
-            request.ContentType = "application/x-www-form-urlencoded";
-            request.ContentLength = zpl.Length;
-
-            var requestStream = request.GetRequestStream();
-            requestStream.Write(zpl, 0, zpl.Length);
-            requestStream.Close();
-
-            try
+            if (within || !borderCheck)
             {
-                var response = (HttpWebResponse)request.GetResponse();
-                var responseStream = response.GetResponseStream();
-                var fileStream = File.Create("label." + labelFormat);
-                responseStream.CopyTo(fileStream);
-                responseStream.Close();
-                fileStream.Close();
+                // Check if the format parameter is valid.
+                var validFormats = new[] { "pdf", "png" };
+                if (!validFormats.Contains(labelFormat))
+                    throw new Exception("Invalid Format. Should be one of " + validFormats.ToString());
+
+                // Start the request building process.
+                byte[] zpl = Encoding.UTF8.GetBytes(zplCode);
+                var url = string
+                    .Format("http://api.labelary.com/v1/printers/{0}dpmm/labels/{1}x{2}/0/", 
+                    _dpu, _dims.width, _dims.height);
+                var request = (HttpWebRequest) WebRequest.Create(url);
+                if (labelFormat == "pdf")
+                    request.Accept = "application/pdf";
+                request.Method = "POST";
+                request.ContentType = "application/x-www-form-urlencoded";
+                request.ContentLength = zpl.Length;
+
+                var requestStream = request.GetRequestStream();
+                requestStream.Write(zpl, 0, zpl.Length);
+                requestStream.Close();
+
+                try
+                {
+                    var response = (HttpWebResponse)request.GetResponse();
+                    var responseStream = response.GetResponseStream();
+                    var fileStream = File.Create("label." + labelFormat);
+                    responseStream.CopyTo(fileStream);
+                    responseStream.Close();
+                    fileStream.Close();
+                }
+                catch (WebException e)
+                {
+                    Console.WriteLine("Error: {0}", e.Status);
+                }
             }
-            catch (WebException e)
+            else if (!within && borderCheck)
             {
-                Console.WriteLine("Error: {0}", e.Status);
+                throw new Exception("The elements on the label exceed the bounds of the set label borders.\n" +
+                    "Max used coordinate of elements: X=" + xMax + ", Y=" + yMax + ".\n" +
+                    "Max possible label cordinates: X=" + xDots + ", Y=" + yDots + ".");
             }
+            else
+            {
+                Console.WriteLine("The elements on the label exceed the bounds of the set label borders.\n" +
+                    "Max used coordinate of elements: X=" + xMax + ", Y=" + yMax + ".\n" +
+                    "Max possible label cordinates: X=" + xDots + ", Y=" + yDots + ".");
+            }
+            
+        }
+        public static void Main(string[] args)
+        {
+            List<string> senderData = new()
+            {
+                "1000 Shipping Lane",
+                "Shelbyville TN 38102",
+                "United States (USA)"
+            };
+
+            List<string> receiverData = new()
+            {
+                "John Doe",
+                "100 Main Street",
+                "Springfield TN 39021",
+                "United States (USA)"
+            };
+
+            List<string> miscData = new()
+            {
+                "Ctr. X34B-1",
+                "REF1 F00B47",
+                "REF2 BL4H8"
+            };
+
+            // Section 1: Sender Data
+            var section1 = new ZebraLabel()
+                .SetFont(font: '0', height: 60)
+                .DrawBox(loc: (50, 50), dims: 100)
+                .DrawBox(loc: (75, 75), dims: 100, invertIfOverlap: true)
+                .DrawBox(loc: (93, 93), dims: 40)
+                .AddText("Intershipping, Inc.", loc: (220, 50))
+                .SetFont(font: '0')
+                .AddMultipleText(senderData, loc: (220, 115))
+                .DrawBox(loc: (50, 250), dims: (700, 3, 3));
+
+            // Section 2: Recipient Data
+            var section2 = new ZebraLabel()
+                .DrawBox(loc: (600, 300), dims: (150, 150, 3))
+                .SetFont()
+                .AddMultipleText(receiverData, loc: (50, 300))
+                .SetFont(height: 15)
+                .AddText("Permit", loc: (638, 340))
+                .AddText("123456", loc: (638, 390))
+                .DrawBox(loc: (50, 500), dims: (700, 3, 3));
+
+            // Section 3: Barcode
+            var section3 = new ZebraLabel()
+                .DrawBarCode("12345678", loc: (100, 550), dims: (5, 270, 2.0));
+
+            // Section 4: Final Data
+            var section4 = new ZebraLabel()
+                .DrawBox(loc: (50, 900), dims: (700, 250, 3))
+                .SetFont(font: '0', height: 40)
+                .AddMultipleText(miscData, loc: (100, 960), down: 50)
+                .DrawBox(loc: (400, 900), dims: (3, 250, 3))
+                .SetFont(font: '0', height: 190)
+                .AddText("CA", loc: (470, 955));
+
+            //Build the full label.
+            var sections = new List<ZebraLabel>() { section1, section2, section3, section4 };
+            var labelV3 = new ZebraLabel(dims: (4, 6, false))
+                .MergeLabels(sections);
+            Console.WriteLine(labelV3.GetLabelString(newlined: true));
+            labelV3.CallLabelary(labelV3.GetLabelString(), labelFormat: "png");
         }
     }
 }
