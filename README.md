@@ -11,6 +11,10 @@ A C# class library for generating ZPL/ ZPL2 code from C# code. Written to suppor
 
 ---
 
+![QuickZebra Banner (Created with Wombo AI)](https://github.com/haraldar/QuickZebra/blob/main/quickzebra_banner.jpg)
+
+---
+
 ## ZebraLabel
 
 The main class to use is the ZebraLabel class.
