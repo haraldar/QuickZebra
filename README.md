@@ -1,6 +1,6 @@
 # QuickZebra
 
-A C# class library for generating ZPL/ ZPL2 code from C# code. Written to support rendering with labelary's API.
+A C# class library for generating ZPL/ ZPL2 code from C# code. Supports rendering with labelary's API.
 
 ---
 
