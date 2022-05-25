@@ -1,8 +1,6 @@
 ﻿// This constellation of code creates the example piece on the labelary.com's Online Viewer.
 
 using QuickZebra;
-using QuickZebra.Options;
-
 List<string> senderData = new()
 {
     "1000 Shipping Lane",
@@ -48,7 +46,7 @@ var section2 = new ZebraLabel()
 
 // Section 3: Barcode
 var section3 = new ZebraLabel()
-    .DrawBarCode("12345678", loc: (100, 550), dims: (5, 120, 3.0));
+    .DrawBarCode("12345678", loc: (100, 550), dims: (5, 270, 2.0));
 
 // Section 4: Final Data
 var section4 = new ZebraLabel()
