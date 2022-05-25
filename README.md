@@ -66,7 +66,7 @@ var label = new ZebraLabel(dims: (4, 6, false))
 And finally it can be simply converted to a ZPL string using ```GetLabelString()``` and sent to labelary's API using ```CallLabelary()```:
 ```csharp
 var labelStr = label.GetLabelString(newlined: true);
-labelV3.CallLabelary(labelV3.GetLabelString(), labelFormat: "png");
+label.CallLabelary(label.GetLabelString(), labelFormat: "png");
 ```
 
 ---
