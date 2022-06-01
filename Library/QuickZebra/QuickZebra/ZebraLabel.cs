@@ -236,6 +236,21 @@ namespace QuickZebra
         }
 
         /// <summary>
+        /// Converts the format into a ZPL code string.
+        /// </summary>
+        /// <param name="newlined">Newline the return string.</param>
+        /// <returns>The ZPL code string that defines the label contents.</returns>
+        public string ToString(bool newlined)
+            => GetLabelString(newlined: newlined);
+
+        /// <summary>
+        /// Converts the format into a ZPL code string.
+        /// </summary>
+        /// <returns>The ZPL code string that defines the label contents.</returns>
+        public override string ToString()
+            => GetLabelString();
+
+        /// <summary>
         /// Rounds up an amount of mm's to the next bigger inch.
         /// </summary>
         /// <param name="mm">The amount millimeters.</param>
@@ -361,5 +376,13 @@ namespace QuickZebra
             }
             
         }
+
+        /// <summary>
+        /// Sends the ZPL code to the labelary API and retrieves the rendered label as either png or pdf. 
+        /// </summary>
+        /// <param name="labelFormat">The rendered label's type (pdf / png).</param>
+        /// <param name="borderCheck">Option to check using an exception wether the elements exceed the borders of the label.</param>
+        public void CallLabelary(string labelFormat = "pdf", bool borderCheck = false)
+            => CallLabelary(this.ToString(), labelFormat: labelFormat, borderCheck: borderCheck);
     }
 }
