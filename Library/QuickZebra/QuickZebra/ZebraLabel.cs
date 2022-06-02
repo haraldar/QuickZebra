@@ -208,15 +208,23 @@ namespace QuickZebra
             return this;
         }
 
-        // offset = null means no offset, <0 means calculate automatically, >=0 means take the given offset
-        public ZebraLabel MergeLabels(ZebraLabel label, int? offset = null)
+        /// <summary>
+        /// Merges a label with this label.
+        /// </summary>
+        /// <param name="label">The label to merge with.</param>
+        /// <returns>The merged label.</returns>
+        public ZebraLabel MergeLabels(ZebraLabel label)
         {
             AddFields(label.Fields);
             return this;
         }
 
-        // offset = null means no offset, <0 means calculate automatically, >=0 means take the given offset
-        public ZebraLabel MergeLabels(List<ZebraLabel> labels, int? offset = null)
+        /// <summary>
+        /// Merges a list of labels with this label.
+        /// </summary>
+        /// <param name="labels">A list of label objects.</param>
+        /// <returns>The merged label.</returns>
+        public ZebraLabel MergeLabels(List<ZebraLabel> labels)
         {
             labels.ForEach(label => AddFields(label.Fields));
             return this;
