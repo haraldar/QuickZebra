@@ -11,7 +11,7 @@ using QuickZebra.Options;
 
 namespace QuickZebra.Elements
 {
-    public class ZebraBarcode : ZebraField, IZebraField
+    public class ZebraBarcode : ZebraField
     {
         private string _content;
         private ZBarcodeType _barcode;
@@ -22,11 +22,8 @@ namespace QuickZebra.Elements
             _barcode = barcode ?? new ZBarcodeType.CODE128().Type;
         }
 
-        public (int x, int y, int w, int h) GetMaxDimensions()
-            => (X, Y, Width, Height);
-
         // TODO ZBarcodeType needs to return a custom type, that can be converted with e.g. toString to the correct param later
-        string IZebraField.Zebrify()
+        public override string Zebrify()
             => EncapsuleLine(ZebraLexicon.B + _barcode + ZebraLexicon.FD + _content);
     }
 }

@@ -7,7 +7,7 @@ using QuickZebra.Options;
 
 namespace QuickZebra.Elements
 {
-    public class ZebraFont : ZebraField, IZebraField
+    public class ZebraFont : ZebraField
     {
         private char _font;
         private int? _fontW;
@@ -19,10 +19,7 @@ namespace QuickZebra.Elements
             if (Width == 0) _fontW = null;
         }
 
-        public (int x, int y, int w, int h) GetMaxDimensions()
-            => (X, Y, Width, Height);
-
-        string IZebraField.Zebrify()
+        public override string Zebrify()
             => ZebraLexicon.CF + _font.ToString() + WithComma(Height)
                 + WithComma(_fontW);
     }

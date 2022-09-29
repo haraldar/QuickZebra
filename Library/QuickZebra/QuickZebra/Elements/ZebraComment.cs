@@ -7,16 +7,14 @@ using QuickZebra.Options;
 
 namespace QuickZebra.Elements
 {
-    public class ZebraComment : ZebraField, IZebraField
+    public class ZebraComment : ZebraField
     {
-        private string _comment;
+        private string _comment = "";
+        public ZebraComment() { }
         public ZebraComment(string comment)
             => _comment = comment;
 
-        public (int x, int y, int w, int h) GetMaxDimensions()
-            => (X, Y, Width, Height);
-
-        string IZebraField.Zebrify()
+        public override string Zebrify()
             => ZebraLexicon.FX + " " + _comment;
     }
 }

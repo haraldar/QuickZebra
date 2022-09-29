@@ -7,7 +7,7 @@ using QuickZebra.Options;
 
 namespace QuickZebra.Elements
 {
-    public class ZebraGraphicalBox : ZebraField, IZebraField
+    public class ZebraGraphicalBox : ZebraField
     {
         private int _thickness;
         private char _color;
@@ -26,10 +26,7 @@ namespace QuickZebra.Elements
             => ZebraLexicon.GB + Width.ToString() + WithComma(Height) + WithComma(_thickness)
                 + WithComma(_color) + WithComma(_rounding);
 
-        public (int x, int y, int w, int h) GetMaxDimensions()
-            => (X, Y, Width, Height);
-
-        string IZebraField.Zebrify()
+        public override string Zebrify()
             => EncapsuleLine(DrawGraphicalBox());
     }
 }

@@ -7,7 +7,7 @@ using QuickZebra.Options;
 
 namespace QuickZebra.Elements
 {
-    public class ZebraBarcodeConfig : ZebraField, IZebraField
+    public class ZebraBarcodeConfig : ZebraField
     {
         private double _ratio;
         public ZebraBarcodeConfig(int width = 2, double widthRatio = 3.0, int height = 10)
@@ -17,10 +17,7 @@ namespace QuickZebra.Elements
             _ratio = widthRatio;
         }
 
-        public (int x, int y, int w, int h) GetMaxDimensions()
-            => (X, Y, Width, Height);
-
-        string IZebraField.Zebrify()
+        public override string Zebrify()
             => ZebraLexicon.BY + Width.ToString() + WithComma(_ratio) + WithComma(Height);
     }
 }

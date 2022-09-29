@@ -7,9 +7,9 @@ using QuickZebra.Options;
 
 namespace QuickZebra.Elements
 {
-    public class ZebraField
+    public abstract class ZebraField
     {
-        #region properties
+        #region Properties
 
         private int _x;
         public int X
@@ -39,6 +39,7 @@ namespace QuickZebra.Elements
             set => _width = ConfineInt(value);
         }
 
+
         private int _alignment;
         public int Alignment
         {
@@ -48,8 +49,10 @@ namespace QuickZebra.Elements
 
         public bool invertOnOverlap = false;
 
-        #endregion properties
+        #endregion Properties
 
+
+        #region Helpers
 
         /// <summary>
         /// Restricts a given value to a given lower and a given upper limit
@@ -90,18 +93,16 @@ namespace QuickZebra.Elements
 
         public static char ToAnswer(bool choice)
             => choice ? 'Y' : 'N';
-    }
 
-    /// <summary>
-    /// Forces certain methods, that are dependant on the Zebra object, to be implemented.
-    /// </summary>
-    public interface IZebraField
-    {
-        /// <summary>
-        /// Converts certain parameters of the Zebra object into ZPL Code strings.
-        /// </summary>
-        /// <returns>The ZPL code string.</returns>
-        public string Zebrify();
-        public (int x, int y, int w, int h) GetMaxDimensions();
+        public (int x, int y, int w, int h) GetMaxDimensions()
+            => (X, Y, Width, Height);
+
+        #endregion Helpers
+
+
+        #region NeedImplementation
+        public abstract string Zebrify();
+
+        #endregion NeedImplementation
     }
 }
