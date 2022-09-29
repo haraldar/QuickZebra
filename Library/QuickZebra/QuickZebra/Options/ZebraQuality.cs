@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,8 +18,15 @@ namespace QuickZebra.Options
         /// Grayscale (G).
         /// </summary>
         public static readonly ZQuality G = new("G");
-        public string Quality;
+
+        public string Value;
         public ZQuality(string literal)
-            => Quality = literal;
+            => Value = literal;
+    }
+
+    public enum ZtQuality
+    {
+        B,
+        G
     }
 }
