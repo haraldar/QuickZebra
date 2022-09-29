@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Reflection;
+using System.Security;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using QuickZebra.Elements;
@@ -11,48 +14,78 @@ namespace QuickZebra
 {
     public class ZebraLabel
     {
-        #region properties
-        public List<IZebraField> Fields = new();
-        private int _dpu;
-        private string _quality;
-        private (int width, int height, bool metric) _dims;
-        private int _padding;
-        #endregion properties
+        #region Properties
+
+        public List<ZebraField> Fields = new();
+        public ZResolution DPU { get; set; } = ZResolution.M8; 
+        public ZQuality Quality { get; set; } = ZQuality.G;
+        public (int width, int height) Dims { get; set; } = (4, 6);
+        public int Padding { get; set; } = 0;
+
+        #endregion Properties
+
+
+        #region Constructor
 
         /// <summary>
         /// The constructor for a Format.
         /// </summary>
-        /// <param name="dpu">The print density (in dpmm).</param>
-        /// <param name="quality">The print quality. G for Grayscale, B for Bitonal.</param>
-        /// <param name="dims">The labels' dimensions width, height and if metric.</param>
-        /// <param name="padding">The inner padding (in inches).</param>
-        public ZebraLabel(ZResolution? dpu = null, ZQuality? quality = null,
-            (int width, int height, bool metric)? dims = null, int padding = 0)
-        {
-            _dims = dims ?? (4, 6, false);
-            if (_dims.metric)
-                (_dims.width, _dims.height) = (MmToNextInch(_dims.width), MmToNextInch(_dims.height));
-            _dpu = (int)(dpu ?? ZResolution.M8);
-            _quality = (quality ?? ZQuality.G).Quality;
-            _padding = padding;
-        }
+        public ZebraLabel() {}
+
+        public ZebraLabel(params ZebraLabel[] labels)
+            => labels.ToList().ForEach(label => AddFields(label.Fields));
+
+        #endregion Constructor
+
+
+        #region Helpers
+
+        private static IEnumerable<ZebraField> InLocrement(
+            IEnumerable<ZebraField> elems, Func<int, (int h, int v)> behave, (int x, int y)? loc = null)
+            => Enumerable
+                .Range(0, elems.Count())
+                .Select(
+                    i =>
+                    {
+                        var (h, v) = behave(i);
+                        var (x, y) = loc ?? (0, 0);
+                        var field = elems.ElementAt(i);
+                        (field.X, field.Y) = (x + h, y + v);
+                        return field;
+                    }
+                );
 
         /// <summary>
         /// Add one ZebraField to the labels list.
         /// </summary>
         /// <param name="field">The field to add.</param>
-        public void AddField(IZebraField field)
+        public void AddField(ZebraField field)
             => Fields.Add(field);
 
         /// <summary>
         /// Adds all the Fields from a list to the labels list.
         /// </summary>
         /// <param name="fieldList">The list containing the Fields to add.</param>
-        public void AddFields(List<IZebraField> fieldList)
+        public void AddFields(IEnumerable<ZebraField> fieldList)
             => Fields.AddRange(fieldList);
 
+
+        public ZebraLabel InvertOverlap(bool invert = true, int index = 0)
+        {
+            ((index > 0)? Fields[index] : Fields[Fields.Count + index]).invertOnOverlap = invert;
+            return this;
+        }
+
+        #endregion Helpers
+
+
+        #region ZebraFieldActions
+
+
+        #region TextActions
+
         /// <summary>
-        /// Create a text field.
+        /// Create a single text field.
         /// </summary>
         /// <param name="text">The text to create.</param>
         /// <param name="loc">The starting coordinates of the field.</param>
@@ -70,36 +103,41 @@ namespace QuickZebra
         }
 
         /// <summary>
-        /// Create multiple text Fields from a list of strings.
+        /// Create multiple text fields along a linear path.
         /// </summary>
-        /// <param name="dataStrings">The list of strings to add.</param>
-        /// <param name="loc">The starting coordinates of the first string.</param>
-        /// <param name="incr">The vertical and horizontal incrementation per string.</param>
-        /// <param name="invertIfOverlap">A flag to invert on overlap.</param>
-        /// <returns>The current ZebraLabel.</returns>
-        public ZebraLabel AddMultipleText(List<string> dataStrings, (int x, int y) loc,
-            (int? x, int? y)? incr = null, bool invertIfOverlap = false)
+        /// <param name="texts">The texts to display.</param>
+        /// <param name="loc">The starting location.</param>
+        /// <param name="incr">The increments for the x and y coordinates.</param>
+        /// <param name="invertIfOverlap">Invert if an overlap happened.</param>
+        /// <returns></returns>
+        public ZebraLabel AddTexts((int x, int y) loc, (int h, int v) incr, bool invertIfOverlap = false,
+            params string[] texts)
         {
-            Fields.AddRange(new ZebraText()
-                .FromList(dataStrings, loc.x, loc.y, incr?.x ?? 0, incr?.y ?? 40, invertIfOverlap));
+            var textObjs = texts.Select(text => new ZebraText(text) { invertOnOverlap = invertIfOverlap });
+            var movedTextObjs = InLocrement(textObjs, i => (i*incr.h, i*incr.v), loc);
+            Fields.AddRange(movedTextObjs);
             return this;
         }
 
         /// <summary>
-        /// Create multiple text Fields from a list of strings.
+        /// Create multiple text fields with a custom behaviour function that depends on the numbered position of the
+        /// element in the list.
         /// </summary>
-        /// <param name="dataStrings">The list of strings to add.</param>
+        /// <param name="texts">The list of strings to add.</param>
         /// <param name="loc">The starting coordinates of the first string.</param>
-        /// <param name="incr">The vertical and horizontal incrementation per string.</param>
+        /// <param name="incr">A delegate function depending on the numbered position of the current text element.</param>
         /// <param name="invertIfOverlap">A flag to invert on overlap.</param>
         /// <returns>The current ZebraLabel.</returns>
-        public ZebraLabel AddMultipleText(List<string> dataStrings, (int x, int y) loc, int down,
-            bool invertIfOverlap = false)
+        public ZebraLabel AddTexts((int x, int y) loc, Func<int, (int x, int y)> incr, bool invertIfOverlap = false,
+            params string[] texts)
         {
-            Fields.AddRange(new ZebraText()
-                .FromList(dataStrings, loc.x, loc.y, 0, down, invertIfOverlap));
+            var textObjs = texts.Select(text => new ZebraText(text) { invertOnOverlap = invertIfOverlap });
+            var movedTextObjs = InLocrement(textObjs, incr);
+            Fields.AddRange(movedTextObjs);
             return this;
         }
+
+        #endregion TextActions
 
         /// <summary>
         /// Sets the current font until it will be changed again.
@@ -208,27 +246,22 @@ namespace QuickZebra
             return this;
         }
 
-        /// <summary>
-        /// Merges a label with this label.
-        /// </summary>
-        /// <param name="label">The label to merge with.</param>
-        /// <returns>The merged label.</returns>
-        public ZebraLabel MergeLabels(ZebraLabel label)
-        {
-            AddFields(label.Fields);
-            return this;
-        }
 
-        /// <summary>
-        /// Merges a list of labels with this label.
-        /// </summary>
-        /// <param name="labels">A list of label objects.</param>
-        /// <returns>The merged label.</returns>
-        public ZebraLabel MergeLabels(List<ZebraLabel> labels)
-        {
-            labels.ForEach(label => AddFields(label.Fields));
-            return this;
-        }
+        #endregion ZebraFieldActions
+
+
+        #region ZebraLabelActions
+
+        ///// <summary>
+        ///// Merges a list of labels with this label.
+        ///// </summary>
+        ///// <param name="labels">A list of label objects.</param>
+        ///// <returns>The merged label.</returns>
+        //public ZebraLabel MergeLabels(params ZebraLabel[] labels)
+        //{
+        //    labels.ToList().ForEach(label => AddFields(label.Fields));
+        //    return this;
+        //}
 
         /// <summary>
         /// Converts the format into a ZPL code string.
@@ -258,6 +291,11 @@ namespace QuickZebra
         public override string ToString()
             => GetLabelString();
 
+        #endregion ZebraLabelActions
+
+
+        #region LabelaryActions
+
         /// <summary>
         /// Rounds up an amount of mm's to the next bigger inch.
         /// </summary>
@@ -284,7 +322,7 @@ namespace QuickZebra
         /// </summary>
         /// <param name="fields">The list of the Zebra elements.</param>
         /// <returns>A tuple that contains the max used coordinates in x and y.</returns>
-        private static (int x, int y) GetMaxLocation(List<IZebraField> fields)
+        private static (int x, int y) GetMaxLocation(List<ZebraField> fields)
         {
             (int xMax, int yMax) = (0, 0);
             (int w, int h) font = (0, 0);
@@ -329,7 +367,7 @@ namespace QuickZebra
         public void CallLabelary(string zplCode, string labelFormat = "pdf", bool borderCheck = false)
         {
             // Check if the elements in the label system are exceeding the bounds of the label.
-            (int xDots, int yDots) = GetMaxDots(_dims.width, _dims.height, _dpu);
+            (int xDots, int yDots) = GetMaxDots(Dims.width, Dims.height, (int) DPU);
             (int xMax, int yMax) = GetMaxLocation(Fields);
             var within = CheckWithinBounds((xDots, yDots), (xMax, yMax));
 
@@ -342,9 +380,7 @@ namespace QuickZebra
 
                 // Start the request building process.
                 byte[] zpl = Encoding.UTF8.GetBytes(zplCode);
-                var url = string
-                    .Format("http://api.labelary.com/v1/printers/{0}dpmm/labels/{1}x{2}/0/", 
-                    _dpu, _dims.width, _dims.height);
+                var url = $"http://api.labelary.com/v1/printers/{(int) DPU}dpmm/labels/{Dims.width}x{Dims.height}/0/";
                 var request = (HttpWebRequest) WebRequest.Create(url);
                 if (labelFormat == "pdf")
                     request.Accept = "application/pdf";
@@ -355,6 +391,9 @@ namespace QuickZebra
                 var requestStream = request.GetRequestStream();
                 requestStream.Write(zpl, 0, zpl.Length);
                 requestStream.Close();
+
+                Console.WriteLine(url);
+                Console.WriteLine(request.ToString());
 
                 try
                 {
@@ -368,6 +407,7 @@ namespace QuickZebra
                 catch (WebException e)
                 {
                     Console.WriteLine("Error: {0}", e.Status);
+                    Console.WriteLine(e.StackTrace);
                 }
             }
             else if (!within && borderCheck)
@@ -392,5 +432,7 @@ namespace QuickZebra
         /// <param name="borderCheck">Option to check using an exception wether the elements exceed the borders of the label.</param>
         public void CallLabelary(string labelFormat = "pdf", bool borderCheck = false)
             => CallLabelary(this.ToString(), labelFormat: labelFormat, borderCheck: borderCheck);
+
+        #endregion LabelaryActions
     }
 }
